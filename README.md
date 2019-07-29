@@ -9,9 +9,11 @@ The code in this repository is the API called by a webhook configured in <https:
 Based on the lists specified in Basic and Essential: <https://github.com/firehol/blocklist-ipsets#which-ones-to-use>
 
 There would be two parts to it.
-Cron job
 
-Create an EC2 instance AMI with update-ipsets installed (https://github.com/firehol/blocklist-ipsets/wiki/installing-update-ipsets) and the following lists enabled:
+- Cron job
+- Webhook API
+
+Create an EC2 instance AMI with update-ipsets installed <https://github.com/firehol/blocklist-ipsets/wiki/installing-update-ipsets> and enable the following lists:
 
 - feodo
 - palevo
