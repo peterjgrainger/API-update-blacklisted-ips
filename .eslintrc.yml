@@ -1,6 +1,7 @@
 extends:
-   - "airbnb"
+   - airbnb
    - 'plugin:jasmine/recommended'
+   - prettier
 plugins:
   - jasmine
 env:
