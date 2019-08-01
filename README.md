@@ -4,6 +4,12 @@ Service to retrieve the list stored in <https://github.com/peterjgrainger/blackl
 
 The code in this repository is the API called by a webhook configured in <https://github.com/peterjgrainger/blacklisted-ips>
 
+## Environment Variables
+
+GITHUB_TOKEN (required) - The rate limit for unauthorised requests tot he github API is low. App token or personal token.
+
+REDIS_HOST (optional) - For production set to the AWS redis host.
+
 ## Where the lists come from
 
 Based on the lists specified in Basic and Essential: <https://github.com/firehol/blocklist-ipsets#which-ones-to-use>
