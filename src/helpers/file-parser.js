@@ -1,7 +1,7 @@
 const cidrRange = require('cidr-range');
 
 const IP_ADDRESS_REGEX = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g;
-const CIDR_ADDRESS_REGEX = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}/g;
+const CIDR_ADDRESS_REGEX = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/[2-9][0-9]/g;
 
 function ipAddresses(file) {
   return file.contents.match(IP_ADDRESS_REGEX) || [];

@@ -9,6 +9,7 @@ describe('/webhook', () => {
 
   beforeAll(() => {
     redisClient = redis.createClient();
+    redisClient.set('1.1.1.1', 'feodo.ipset');
   });
 
   beforeAll(() => {
@@ -34,7 +35,7 @@ describe('/webhook', () => {
       .send(event)
       .expect(200)
       .then(() => {
-        redisClient.get('103.75.118.230', (err, reply) => {
+        redisClient.get('1.1.1.1', (err, reply) => {
           expect(reply).toBe('feodo.ipset');
           done();
         });
