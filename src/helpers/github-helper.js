@@ -1,13 +1,14 @@
 const requestLibrary = require('request-promise');
 
-const IP_ADDRESS_REGEX = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g;
 // required defaults to contact github API
-const request = requestLibrary.defaults({
+const requestDefaults = {
   headers: {
     'User-Agent': 'peterjgrainger',
     Authorization: `token ${process.env.GITHUB_TOKEN}`
   }
-});
+};
+
+const request = requestLibrary.defaults(requestDefaults);
 
 /**
  * Download the raw text file
@@ -60,20 +61,7 @@ function getRepositoryFileList(req) {
   });
 }
 
-/**
- * Convert simple text into a list of IP addresses
- *
- * @param {array} files file objects containing ipAddresses and the source
- */
-function parseFiles(files) {
-  return files.map(file => ({
-    ipAddresses: file.contents.match(IP_ADDRESS_REGEX),
-    source: file.source
-  }));
-}
-
 module.exports = {
-  parseFiles,
   getRepositoryFileList,
   downloadFiles
 };

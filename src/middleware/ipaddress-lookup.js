@@ -1,15 +1,15 @@
 const githubHelper = require('../helpers/github-helper');
+const fileParser = require('../helpers/file-parser');
 
-function setLookup(req, res, next) {
+function ipaddressLookup(req, res, next) {
   return githubHelper
     .getRepositoryFileList(req)
     .then(githubHelper.downloadFiles)
-    .then(githubHelper.parseFiles)
     .then(sets => {
-      req.sets = sets;
+      req.sets = fileParser(sets);
       next();
     })
     .catch(next);
 }
 
-module.exports = setLookup;
+module.exports = ipaddressLookup;

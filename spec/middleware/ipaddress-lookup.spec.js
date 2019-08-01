@@ -1,85 +1,89 @@
 const rewire = require('rewire');
 
 describe('src/middleware/ipaddress-lookup', () => {
-  let ipaddressMiddleware;
-  let requestMock;
+  let middleware;
+  let githubHelper;
+  let fileParser;
   let req;
-  let repositoryContents;
-  let fileContents;
-  const contentsUrl =
-    'https://api.github.com/repos/peterjgrainger/blacklisted-ips/contents';
-  const downloadUrl =
-    'https://raw.githubusercontent.com/peterjgrainger/blacklisted-ips/master/feoda.ipset';
+  let next;
+  let list;
+  let sets;
+  let parsedFiles;
 
   beforeEach(() => {
-    requestMock = jasmine.createSpyObj('request-mock', ['get']);
-    req = {
-      body: {
-        repository: {
-          contents_url: contentsUrl
-        }
-      }
-    };
-    repositoryContents = [
-      {
-        name: 'feoda.ipset',
-        path: 'feoda.ipset',
-        sha: 'f7dd6ec4ebca331bab18aad479c31f40eaf9c550',
-        size: 71,
-        url:
-          'https://api.github.com/repos/peterjgrainger/blacklisted-ips/contents/feoda.ipset?ref=master',
-        html_url:
-          'https://github.com/peterjgrainger/blacklisted-ips/blob/master/feoda.ipset',
-        git_url:
-          'https://api.github.com/repos/peterjgrainger/blacklisted-ips/git/blobs/f7dd6ec4ebca331bab18aad479c31f40eaf9c550',
-        download_url: downloadUrl,
-        type: 'file',
-        _links: {
-          self:
-            'https://api.github.com/repos/peterjgrainger/blacklisted-ips/contents/feoda.ipset?ref=master',
-          git:
-            'https://api.github.com/repos/peterjgrainger/blacklisted-ips/git/blobs/f7dd6ec4ebca331bab18aad479c31f40eaf9c550',
-          html:
-            'https://github.com/peterjgrainger/blacklisted-ips/blob/master/feoda.ipset'
-        }
-      }
-    ];
+    middleware = rewire('../../src/middleware/ipaddress-lookup.js');
 
-    fileContents = '1.1.1.1\n2.2.2.2';
+    githubHelper = jasmine.createSpyObj('github-helper', [
+      'getRepositoryFileList',
+      'downloadFiles'
+    ]);
+    fileParser = jasmine.createSpy('file-parser');
+    next = jasmine.createSpy('next');
 
-    requestMock.get
-      .withArgs(contentsUrl)
-      .and.returnValue(Promise.resolve(repositoryContents));
-    requestMock.get
-      .withArgs(downloadUrl)
-      .and.returnValue(Promise.resolve(fileContents));
+    req = {};
+    list = ['file-list'];
+    sets = ['sets'];
+    parsedFiles = 'parsedFiles';
 
-    ipaddressMiddleware = rewire('../../src/middleware/ipaddress-lookup');
-    // eslint-disable-next-line no-underscore-dangle
-    ipaddressMiddleware.__set__('request', requestMock);
+    githubHelper.getRepositoryFileList
+      .withArgs(req)
+      .and.returnValue(Promise.resolve(list));
+
+    githubHelper.downloadFiles.and.returnValue(Promise.resolve(sets));
+
+    fileParser.and.returnValue(parsedFiles);
+
+    /* eslint-disable no-underscore-dangle */
+    middleware.__set__('githubHelper', githubHelper);
+    middleware.__set__('fileParser', fileParser);
+    /* eslint-enable no-underscore-dangle */
   });
 
-  xit('adds a list of ips to the request', () =>
-    ipaddressMiddleware(req, {}, () => {}).then(() => {
-      expect(req.sets).toEqual([
-        {
-          source: 'feoda.ipset',
-          ipAddresses: ['1.1.1.1', '2.2.2.2']
-        }
-      ]);
-    }));
+  describe('successful processing', () => {
+    beforeEach(done => {
+      middleware(req, {}, next)
+        .then(done)
+        .catch(done);
+    });
 
-  xit('handles an empty file list', () => {
-    requestMock.get.withArgs(contentsUrl).and.returnValue(Promise.resolve([]));
-    return ipaddressMiddleware(req, {}, () => {}).then(() => {
-      expect(req.sets).toEqual([]);
+    it('calls next with no arguments', () => {
+      expect(next).toHaveBeenCalledWith();
+    });
+
+    it('gets the repository file list', () => {
+      expect(githubHelper.getRepositoryFileList).toHaveBeenCalledWith(req);
+    });
+
+    it('calls download files with the file list', () => {
+      expect(githubHelper.downloadFiles).toHaveBeenCalledWith(list);
+    });
+
+    it('adds the sets to the request', () => {
+      expect(req.sets).toBe(parsedFiles);
     });
   });
 
-  xit('handles failures by calling next', () => {
-    requestMock.get.and.throwError(new Error());
-    return ipaddressMiddleware(req, {}, () => {}).catch(error => {
-      expect(error).toEqual(new Error());
+  describe('unsuccessfull processing', () => {
+    it('calls next with error from getRepositoryFileList', done => {
+      const error = new Error();
+      githubHelper.getRepositoryFileList.and.throwError(error);
+
+      middleware(req, {}, next)
+        .then(() => done('should have failed'))
+        .catch(() => {
+          expect(next).toHaveBeenCalledWith(error);
+        });
+    });
+
+    it('calls next with error from downloadFiles', done => {
+      const error = new Error();
+      githubHelper.downloadFiles.and.throwError(error);
+
+      middleware(req, {}, next)
+        .then(() => done('should have failed'))
+        .catch(() => {
+          expect(next).toHaveBeenCalledWith(error);
+        });
     });
   });
 });
